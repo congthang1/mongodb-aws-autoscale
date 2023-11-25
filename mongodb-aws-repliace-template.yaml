@@ -1,0 +1,1242 @@
+AWSTemplateFormatVersion: 2010-09-09
+Parameters:
+  DbName:
+    Type: String
+    Description: "Enter name of db eg: mongodb-replica-ebs-arm-01"
+  DeployMode:
+    Type: String
+    Description: Select Number of Instance
+    AllowedValues:
+      - CREATE
+      - RESTORE
+    Default: RESTORE
+  EnableAutoScale:
+    Type: String
+    Description: Select enable or disable autoscale
+    AllowedValues:
+      - "YES"
+      -  "NO"
+    Default: "YES"
+  EnableScaleIn:
+    Type: String
+    Description: Select enable or disable scale down
+    AllowedValues:
+      - "YES"
+      -  "NO"
+    Default: "YES"
+  LambdaExecutionRoleArn:
+    Type: String
+    Description: "Enter Lambda role that can create cloudwatch logs"
+    Default: arn:aws:iam::YOURACCOUNTID:role/ROLENAME
+  TemplateURL: 
+    Type: String
+    Description: "Enter this Template URL you uploaded to your s3"
+    Default: https://yourbucket.s3.ap-southeast-1.amazonaws.com/mongodb-aws-repliace-template.yaml
+  VolumeId01: 
+    Type: String
+    Description: "Enter Restore VolumeID 01"
+  VolumeId02: 
+    Type: String
+    Description: "Enter Restore VolumeID 02"
+  VolumeId03: 
+    Type: String
+    Description: "Enter Restore VolumeID 03"
+  VolumeSize:
+    Type: String
+    Description: "Enter Size GiB"
+    Default: 10
+  CapabilityProvider01:
+    Type: String
+    Description: Select Capability Provider for node 01
+    AllowedValues:
+      - ONDEMAND
+      - SPOT
+    Default: SPOT
+  CapabilityProvider02:
+    Type: String
+    Description: Select Capability Provider for node 02
+    AllowedValues:
+      - ONDEMAND
+      - SPOT
+    Default: SPOT
+  CapabilityProvider03:
+    Type: String
+    Description: Select Capability Provider for node 03
+    AllowedValues:
+      - ONDEMAND
+      - SPOT
+    Default: SPOT
+  MongoInitDbRootUsername:
+    Type: String
+    Description: "Enter MongoDb username to connect to"
+    Default: mongouser
+  MongoInitDbRootPassword:
+    Type: String
+    Description: "Enter your Mongodb master password"
+    Default: mongopassword
+  ContainerImageMongoUri:
+    Type: String
+    Description: "Enter custom Mongo Image uri build source"
+    Default: 
+  AWSAccessKeyId:
+    Type: String
+    Description: "Enter your AWS_ACCESS_KEY_ID"
+    Default:
+  AWSSecretAccessId:
+    Type: String
+    Description: "Enter your AWS_SECRET_ACCESS_KEY"
+    Default: 
+  AWSDefaultRegion: 
+    Type: String
+    Description: "Enter AWS Default region"
+    Default: ap-southeast-1
+  ECSRoleArn:
+    Type: String
+    Description: Task Role Arn
+    Default: "arn:aws:iam::YOURAWSID:role/ecsTaskExecutionRole" 
+  NumberOfReplicaInstance:
+    Type: String
+    Description: Select Number of Instance
+    AllowedValues:
+      - 0
+      - 1
+      - 3
+    Default: 3
+  InstanceType01:
+    Type: String
+    Description: Select instance type
+    AllowedValues:
+      - c6g.medium
+      - c6g.large
+      - c6gd.large
+      - t3a.medium
+      - c6gn.xlarge
+      - m6a.large
+      - m6g.medium
+      - m6gd.medium
+      - m7g.medium
+      - m7gd.medium
+      - m6g.large
+      - m6gd.large
+      - m7g.large
+      - m7gd.large
+      - m6g.xlarge
+      - m6gd.xlarge
+      - m7g.xlarge
+      - m7gd.xlarge
+    Default: m7g.medium
+  InstanceType02:
+    Type: String
+    Description: Select instance type
+    AllowedValues:
+      - c6g.medium
+      - c6g.large
+      - c6gd.large
+      - t3a.medium
+      - c6gn.xlarge
+      - m6a.large
+      - m6g.medium
+      - m6gd.medium
+      - m7g.medium
+      - m7gd.medium
+      - m6g.large
+      - m6gd.large
+      - m7g.large
+      - m7gd.large
+      - m6g.xlarge
+      - m6gd.xlarge
+      - m7g.xlarge
+      - m7gd.xlarge
+    Default: m6g.medium
+  InstanceType03:
+    Type: String
+    Description: Select instance type
+    AllowedValues:
+      - c6g.medium
+      - c6g.large
+      - c6gd.large
+      - t3a.medium
+      - c6gn.xlarge
+      - m6a.large
+      - m6g.medium
+      - m6gd.medium
+      - m7g.medium
+      - m7gd.medium
+      - m6g.large
+      - m6gd.large
+      - m7g.large
+      - m7gd.large
+      - m6g.xlarge
+      - m6gd.xlarge
+      - m7g.xlarge
+      - m7gd.xlarge
+    Default: m6gd.medium
+  ClusterName:
+    Type: String
+    Description: Enter ECS Cluster Name
+  SecurityGroupId:
+    Type: String
+    Description: Enter SecurityGroupId
+    Default: sg-xxxxxxxx
+  ECSIAMRoleArn: 
+    Type: String
+    Description: Enter IAM instance profile arn
+    Default: arn:aws:iam::YOURACCOUNTID:instance-profile/ecsInstanceRole
+  SecurityGroupService:
+    Type: CommaDelimitedList
+    Description: Enter service security group ids
+    Default: "sg-xxxxxxxx"
+  Subnets:
+    Type: CommaDelimitedList
+    Description: Enter Subnets ids
+    Default: "subnet-xxxx"
+  SubnetId:
+    Type: String
+    Description: Enter Subnets ids
+    Default: subnet-xxxx
+  SSHKeyName:
+    Type: String
+    Description: Enter SSH keypair name
+    Default: ssh-keyname
+  ServiceDiscoveryNameSpaceId:
+    Type: String
+    Description: Enter Service Name Space Id
+    Default: ns-xxxxx
+  ServiceDiscoveryNameSpace:
+    Type: String
+    Description: Enter Service Name Space
+    Default: your-service-name-space
+  AvailabilityZone:
+    Type: String
+    Description: Enter Availability zone
+    Default: ap-southeast-1c
+  ECSOptimizedAMIId:
+    Type: String
+    Description: Enter ECS optimized AMI ID
+    Default: ami-04cc846b2f67a7a61
+  ECSOptimizedAMIArm64Id:
+    Type: String
+    Description: Enter ECS optimized AMI ID
+    Default: ami-0e01f5b4cebdd3a8e
+  Architecture:
+    Type: String
+    Description: Select Instance Platform architecture type
+    AllowedValues:
+      - x86
+      - arm
+    Default: arm
+Conditions:
+  CreateReplica03: !Equals
+    - !Ref NumberOfReplicaInstance
+    - 3
+  CreateReplica02: !Or
+    - !Condition CreateReplica03
+    - !Equals
+      - !Ref NumberOfReplicaInstance
+      - 2
+  CreateReplica01: !Or
+    - !Condition CreateReplica02
+    - !Equals
+      - !Ref NumberOfReplicaInstance
+      - 1
+  CreateNewMode: !Equals
+    - !Ref DeployMode
+    - CREATE
+  RestoreMode: !Equals
+    - !Ref DeployMode
+    - RESTORE
+  ConditionUseArm: !Equals
+    - !Ref Architecture
+    - "arm"
+  UseOndemand01: !Equals
+    - !Ref CapabilityProvider01
+    - "ONDEMAND"
+  UseOndemand02: !Equals
+    - !Ref CapabilityProvider02
+    - "ONDEMAND"
+  UseOndemand03: !Equals
+    - !Ref CapabilityProvider03
+    - "ONDEMAND"
+Mappings: 
+  InstanceTypeMap:
+    c6g.medium:
+      Memory: 1900
+    c6g.large:
+      Memory: 3900
+    c6gd.large:
+      Memory: 3900
+    t3a.medium:
+      Memory: 1900
+    c6gn.xlarge:
+      Memory: 7600
+    m6a.large:
+      Memory: 7600
+    m6g.medium:
+      Memory: 3700
+    m6gd.medium:
+      Memory: 3700
+    m7g.medium:
+      Memory: 3700
+    m7gd.medium:
+      Memory: 3700
+    m6g.large:
+      Memory: 7600
+    m6gd.large:
+      Memory: 7600
+    m7g.large:
+      Memory: 7600
+    m7gd.large:
+      Memory: 7600
+    m6g.xlarge:
+      Memory: 15000
+    m6gd.xlarge:
+      Memory: 15000
+    m7g.xlarge:
+      Memory: 15000
+    m7gd.xlarge:
+      Memory: 15000
+Resources:
+  Volume01:
+    Type: AWS::EC2::Volume
+    DeletionPolicy: Retain
+    Properties:
+      AvailabilityZone: !Ref AvailabilityZone
+      Size: !Ref VolumeSize
+      Tags: 
+        - Key: Service
+          Value: !Sub Mongodb-${DbName}
+      VolumeType: gp3
+  Volume02:
+    Type: AWS::EC2::Volume
+    DeletionPolicy: Retain
+    Properties:
+      AvailabilityZone: !Ref AvailabilityZone
+      Size: !Ref VolumeSize
+      Tags: 
+        - Key: Service
+          Value: !Sub Mongodb-${DbName}
+      VolumeType: gp3
+  Volume03:
+    Type: AWS::EC2::Volume
+    DeletionPolicy: Retain
+    Properties:
+      AvailabilityZone: !Ref AvailabilityZone
+      Size: !Ref VolumeSize
+      Tags: 
+        - Key: Service
+          Value: !Sub Mongodb-${DbName}
+      VolumeType: gp3
+  LaunchTemplate01:
+    Type: AWS::EC2::LaunchTemplate
+    Properties:
+      LaunchTemplateData:
+        ImageId: !If
+            - ConditionUseArm
+            - !Ref ECSOptimizedAMIArm64Id
+            - !Ref ECSOptimizedAMIId
+        KeyName: !Ref SSHKeyName
+        IamInstanceProfile: 
+          Arn: !Ref ECSIAMRoleArn
+        NetworkInterfaces: 
+          - SubnetId: !Ref SubnetId
+            DeviceIndex: 0
+            Groups: 
+              - !Ref SecurityGroupId
+        TagSpecifications:
+          - ResourceType: instance
+            Tags: 
+              - Key: ServiceType
+                Value: MongoDB
+              - Key: Service
+                Value: !Ref DbName
+        UserData: !If 
+          - CreateNewMode
+          - Fn::Base64: !Sub |
+              #!/bin/bash 
+              echo ECS_CLUSTER=${ClusterName} >> /etc/ecs/ecs.config; 
+              echo ECS_IMAGE_PULL_BEHAVIOR=always >> /etc/ecs/ecs.config;  
+              echo ECS_INSTANCE_ATTRIBUTES={\"${DbName}-rindex\": \"01\"} >> /etc/ecs/ecs.config;
+              AWS_ACCESS_KEY_ID=${AWSAccessKeyId} AWS_SECRET_ACCESS_KEY=${AWSSecretAccessId} aws ec2 attach-volume --volume-id ${Volume01} --instance-id `ec2-metadata --instance-id | cut -d: -f2 | xargs` --region ${AWSDefaultRegion} --device /dev/sdf || true
+              sleep 5 || true
+              sudo mount /dev/sdf /data/db || true
+              mkdir /ecsdata 
+              echo `ec2-metadata --local-ipv4 | cut -d: -f2 | xargs` > /ecsdata/hostlocalip
+              echo ${InstanceType01} > /ecsdata/instanceType
+          - Fn::Base64: !Sub |
+              #!/bin/bash 
+              echo ECS_CLUSTER=${ClusterName} >> /etc/ecs/ecs.config; 
+              echo ECS_IMAGE_PULL_BEHAVIOR=always >> /etc/ecs/ecs.config;  
+              echo ECS_INSTANCE_ATTRIBUTES={\"${DbName}-rindex\": \"01\"} >> /etc/ecs/ecs.config;
+              AWS_ACCESS_KEY_ID=${AWSAccessKeyId} AWS_SECRET_ACCESS_KEY=${AWSSecretAccessId} aws ec2 attach-volume --volume-id ${VolumeId01} --instance-id `ec2-metadata --instance-id | cut -d: -f2 | xargs` --region ${AWSDefaultRegion} --device /dev/sdf || true
+              sleep 5 || true
+              sudo mount /dev/sdf /data/db || true
+              mkdir /ecsdata 
+              echo `ec2-metadata --local-ipv4 | cut -d: -f2 | xargs` > /ecsdata/hostlocalip
+              echo ${InstanceType01} > /ecsdata/instanceType
+      LaunchTemplateName: !Sub ${DbName}-MongoDB-EBS-LaunchTemplate-01
+  LaunchTemplate02:
+    Type: AWS::EC2::LaunchTemplate
+    Properties:
+      LaunchTemplateData:
+        ImageId: !If
+            - ConditionUseArm
+            - !Ref ECSOptimizedAMIArm64Id
+            - !Ref ECSOptimizedAMIId
+        KeyName: !Ref SSHKeyName
+        KeyName: !Ref SSHKeyName
+        IamInstanceProfile: 
+          Arn: !Ref ECSIAMRoleArn
+        NetworkInterfaces: 
+          - SubnetId: !Ref SubnetId
+            DeviceIndex: 0
+            Groups: 
+              - !Ref SecurityGroupId
+        TagSpecifications:
+          - ResourceType: instance
+            Tags: 
+              - Key: ServiceType
+                Value: MongoDB
+              - Key: Service
+                Value: !Ref DbName
+        UserData: !If 
+          - CreateNewMode
+          - Fn::Base64: !Sub |
+              #!/bin/bash 
+              echo ECS_CLUSTER=${ClusterName} >> /etc/ecs/ecs.config; 
+              echo ECS_IMAGE_PULL_BEHAVIOR=always >> /etc/ecs/ecs.config;  
+              echo ECS_INSTANCE_ATTRIBUTES={\"${DbName}-rindex\": \"02\"} >> /etc/ecs/ecs.config;
+              AWS_ACCESS_KEY_ID=${AWSAccessKeyId} AWS_SECRET_ACCESS_KEY=${AWSSecretAccessId} aws ec2 attach-volume --volume-id ${Volume02} --instance-id `ec2-metadata --instance-id | cut -d: -f2 | xargs` --region ${AWSDefaultRegion} --device /dev/sdf || true
+              sleep 5 || true
+              sudo mount /dev/sdf /data/db || true
+              mkdir /ecsdata 
+              echo `ec2-metadata --local-ipv4 | cut -d: -f2 | xargs` > /ecsdata/hostlocalip
+              echo ${InstanceType02} > /ecsdata/instanceType
+          - Fn::Base64: !Sub |
+              #!/bin/bash 
+              echo ECS_CLUSTER=${ClusterName} >> /etc/ecs/ecs.config; 
+              echo ECS_IMAGE_PULL_BEHAVIOR=always >> /etc/ecs/ecs.config;  
+              echo ECS_INSTANCE_ATTRIBUTES={\"${DbName}-rindex\": \"02\"} >> /etc/ecs/ecs.config;
+              AWS_ACCESS_KEY_ID=${AWSAccessKeyId} AWS_SECRET_ACCESS_KEY=${AWSSecretAccessId} aws ec2 attach-volume --volume-id ${VolumeId02} --instance-id `ec2-metadata --instance-id | cut -d: -f2 | xargs` --region ${AWSDefaultRegion} --device /dev/sdf || true
+              sleep 5 || true
+              sudo mount /dev/sdf /data/db || true
+              mkdir /ecsdata 
+              echo `ec2-metadata --local-ipv4 | cut -d: -f2 | xargs` > /ecsdata/hostlocalip
+              echo ${InstanceType02} > /ecsdata/instanceType
+      LaunchTemplateName: !Sub ${DbName}-MongoDB-EBS-LaunchTemplate-02
+  LaunchTemplate03:
+    Type: AWS::EC2::LaunchTemplate
+    Properties:
+      LaunchTemplateData:
+        ImageId: !If
+          - ConditionUseArm
+          - !Ref ECSOptimizedAMIArm64Id
+          - !Ref ECSOptimizedAMIId
+        KeyName: !Ref SSHKeyName
+        IamInstanceProfile: 
+          Arn: !Ref ECSIAMRoleArn
+        NetworkInterfaces: 
+          - SubnetId: !Ref SubnetId
+            DeviceIndex: 0
+            Groups: 
+              - !Ref SecurityGroupId
+        TagSpecifications:
+          - ResourceType: instance
+            Tags: 
+              - Key: ServiceType
+                Value: MongoDB
+              - Key: Service
+                Value: !Ref DbName
+        UserData: !If 
+          - CreateNewMode
+          - Fn::Base64: !Sub |
+              #!/bin/bash 
+              echo ECS_CLUSTER=${ClusterName} >> /etc/ecs/ecs.config; 
+              echo ECS_IMAGE_PULL_BEHAVIOR=always >> /etc/ecs/ecs.config;  
+              echo ECS_INSTANCE_ATTRIBUTES={\"${DbName}-rindex\": \"03\"} >> /etc/ecs/ecs.config;
+              AWS_ACCESS_KEY_ID=${AWSAccessKeyId} AWS_SECRET_ACCESS_KEY=${AWSSecretAccessId} aws ec2 attach-volume --volume-id ${Volume03} --instance-id `ec2-metadata --instance-id | cut -d: -f2 | xargs` --region ${AWSDefaultRegion} --device /dev/sdf || true
+              sleep 5 || true
+              sudo mount /dev/sdf /data/db || true
+              mkdir /ecsdata 
+              echo `ec2-metadata --local-ipv4 | cut -d: -f2 | xargs` > /ecsdata/hostlocalip
+              echo ${InstanceType03} > /ecsdata/instanceType
+          - Fn::Base64: !Sub |
+              #!/bin/bash 
+              echo ECS_CLUSTER=${ClusterName} >> /etc/ecs/ecs.config; 
+              echo ECS_IMAGE_PULL_BEHAVIOR=always >> /etc/ecs/ecs.config;  
+              echo ECS_INSTANCE_ATTRIBUTES={\"${DbName}-rindex\": \"03\"} >> /etc/ecs/ecs.config;
+              AWS_ACCESS_KEY_ID=${AWSAccessKeyId} AWS_SECRET_ACCESS_KEY=${AWSSecretAccessId} aws ec2 attach-volume --volume-id ${VolumeId03} --instance-id `ec2-metadata --instance-id | cut -d: -f2 | xargs` --region ${AWSDefaultRegion} --device /dev/sdf || true
+              sleep 5 || true
+              sudo mount /dev/sdf /data/db || true
+              mkdir /ecsdata 
+              echo `ec2-metadata --local-ipv4 | cut -d: -f2 | xargs` > /ecsdata/hostlocalip
+              echo ${InstanceType03} > /ecsdata/instanceType
+      LaunchTemplateName: !Sub ${DbName}-MongoDB-EBS-LaunchTemplate-03
+  AutoScaleGroup01:
+    Type: AWS::AutoScaling::AutoScalingGroup
+    Properties:
+      AutoScalingGroupName: !Sub ${DbName}-MongoDB-EBS-AutoScaleGroup-01
+      AvailabilityZones: 
+        - !Ref AvailabilityZone
+      CapacityRebalance: true
+      DesiredCapacity: !If 
+        - CreateReplica01
+        - 1
+        - 0
+      MinSize: !If 
+        - CreateReplica01
+        - 1
+        - 0
+      MaxSize: !If 
+        - CreateReplica01
+        - 2
+        - 0
+      MixedInstancesPolicy:
+        InstancesDistribution: 
+          OnDemandAllocationStrategy: prioritized
+          OnDemandBaseCapacity: !If
+            - UseOndemand01
+            - 1
+            - 0
+          OnDemandPercentageAboveBaseCapacity: 0
+          SpotAllocationStrategy: price-capacity-optimized
+        LaunchTemplate: 
+          LaunchTemplateSpecification: 
+            LaunchTemplateId: !Ref LaunchTemplate01
+            Version: !GetAtt LaunchTemplate01.LatestVersionNumber
+          Overrides:
+            - InstanceType: !Ref InstanceType01
+    DependsOn:
+      - Service02
+  AutoScaleGroup02:
+    Type: AWS::AutoScaling::AutoScalingGroup
+    Properties:
+      AutoScalingGroupName: !Sub ${DbName}-MongoDB-EBS-AutoScaleGroup-02
+      AvailabilityZones: 
+        - !Ref AvailabilityZone
+      CapacityRebalance: true
+      DesiredCapacity: !If 
+        - CreateReplica02 
+        - 1
+        - 0
+      MinSize: !If 
+        - CreateReplica02
+        - 1
+        - 0
+      MaxSize: !If 
+        - CreateReplica02
+        - 2
+        - 0
+      MixedInstancesPolicy:
+        InstancesDistribution: 
+          OnDemandAllocationStrategy: prioritized
+          OnDemandBaseCapacity: !If
+            - UseOndemand02
+            - 1
+            - 0
+          OnDemandPercentageAboveBaseCapacity: 0
+          SpotAllocationStrategy: price-capacity-optimized
+        LaunchTemplate: 
+          LaunchTemplateSpecification: 
+            LaunchTemplateId: !Ref LaunchTemplate02
+            Version: !GetAtt LaunchTemplate02.LatestVersionNumber
+          Overrides:
+            - InstanceType: !Ref InstanceType02
+    DependsOn:
+      - Service03
+  AutoScaleGroup03:
+    Type: AWS::AutoScaling::AutoScalingGroup
+    Properties:
+      AutoScalingGroupName: !Sub ${DbName}-MongoDB-EBS-AutoScaleGroup-03
+      AvailabilityZones: 
+        - !Ref AvailabilityZone
+      CapacityRebalance: true
+      DesiredCapacity: !If 
+        - CreateReplica03 
+        - 1
+        - 0
+      MinSize: !If 
+        - CreateReplica03 
+        - 1
+        - 0
+      MaxSize: !If 
+        - CreateReplica03 
+        - 2
+        - 0
+      MixedInstancesPolicy:
+        InstancesDistribution: 
+          OnDemandAllocationStrategy: prioritized
+          OnDemandBaseCapacity: !If
+            - UseOndemand03
+            - 1
+            - 0
+          OnDemandPercentageAboveBaseCapacity: 0
+          SpotAllocationStrategy: price-capacity-optimized
+        LaunchTemplate: 
+          LaunchTemplateSpecification: 
+            LaunchTemplateId: !Ref LaunchTemplate03
+            Version: !GetAtt LaunchTemplate03.LatestVersionNumber   
+          Overrides:
+            - InstanceType: !Ref InstanceType03
+  TaskDefinition01:
+    Type: "AWS::ECS::TaskDefinition"
+    Properties:
+      ExecutionRoleArn: !Ref ECSRoleArn
+      ContainerDefinitions:
+        - Image: !Sub ${ContainerImageMongoUri}
+          Cpu: 0
+          HealthCheck: 
+            Command: 
+              - CMD-SHELL
+              - !Sub mongo "mongodb://${MongoInitDbRootUsername}:${MongoInitDbRootPassword}@127.0.0.1:27017/admin?authSource=admin" --eval 'db.runCommand("ping").ok'
+            Interval: 120
+            Retries: 10
+            StartPeriod: 300
+            Timeout: 5
+          Ulimits: 
+            - HardLimit: 100000
+              Name: nofile
+              SoftLimit: 100000
+          Command: 
+            - --replSet
+            - rs01
+            - --keyFile
+            - /keyfile.pem
+          Environment:
+            - Name: VOLUME_ID
+              Value: !If
+                - CreateNewMode 
+                - !Ref Volume01
+                - !Ref VolumeId01
+            - Name: INSTANCE_TYPE
+              Value: !Ref InstanceType01
+            - Name: AWS_ACCESS_KEY_ID
+              Value: !Ref AWSAccessKeyId
+            - Name: AWS_SECRET_ACCESS_KEY
+              Value: !Ref AWSSecretAccessId
+            - Name: AWS_DEFAULT_REGION
+              Value: !Ref AWSDefaultRegion
+            - Name: MONGO_INITDB_ROOT_USERNAME
+              Value: !Ref MongoInitDbRootUsername
+            - Name: MONGO_INITDB_ROOT_PASSWORD
+              Value: !Ref MongoInitDbRootPassword
+            - Name: DB_NAME
+              Value: !Ref DbName
+            - Name: DB_HOST
+              Value: !Sub "${DbName}-01.${ServiceDiscoveryNameSpace}"
+            - Name: RS_INDEX
+              Value: 0
+            - Name: RS_PRIORITY
+              Value: 3
+            - Name: NUMBER_REPLICA_INSTANCE
+              Value: !Ref NumberOfReplicaInstance
+            - Name: SERVICE_DISCOVERY_NAME
+              Value: !Ref ServiceDiscoveryNameSpace
+          MountPoints: 
+            - ContainerPath: /data/db
+              SourceVolume: dbpath
+            - ContainerPath: /hostmetadata
+              SourceVolume: hostmetadata
+          VolumesFrom: []
+          Essential: true
+          Name: !Sub "${DbName}-01"
+          LogConfiguration: 
+            LogDriver: awslogs
+            Options: 
+              awslogs-group: /ecs/mongodb
+              awslogs-region : !Ref AWSDefaultRegion
+              awslogs-stream-prefix: !Sub "${DbName}-01"
+      PlacementConstraints: []
+      TaskRoleArn: !Ref ECSRoleArn
+      Family: !Sub "${DbName}-01"
+      RequiresCompatibilities: 
+        - EC2
+      NetworkMode: awsvpc
+      Memory: !FindInMap [InstanceTypeMap, !Ref InstanceType01, "Memory"]
+      Volumes:
+        - Name : dbpath
+          Host: 
+            SourcePath: /data/db
+        - Name : hostmetadata
+          Host: 
+            SourcePath: /ecsdata
+  TaskDefinition02:
+    Type: "AWS::ECS::TaskDefinition"
+    Properties:
+      ExecutionRoleArn: !Ref ECSRoleArn
+      ContainerDefinitions:
+        - Image: !Sub ${ContainerImageMongoUri}
+          Cpu: 0
+          HealthCheck: 
+            Command: 
+              - CMD-SHELL
+              - !Sub mongo "mongodb://${MongoInitDbRootUsername}:${MongoInitDbRootPassword}@127.0.0.1:27017/admin?authSource=admin" --eval 'db.runCommand("ping").ok'
+            Interval: 120
+            Retries: 10
+            StartPeriod: 300
+            Timeout: 5
+          Ulimits: 
+            - HardLimit: 100000
+              Name: nofile
+              SoftLimit: 100000
+          Command: 
+            - --replSet
+            - rs01
+            - --keyFile
+            - /keyfile.pem
+          Environment:
+            - Name: VOLUME_ID
+              Value: !If
+                - CreateNewMode 
+                - !Ref Volume02
+                - !Ref VolumeId02
+            - Name: INSTANCE_TYPE
+              Value: !Ref InstanceType02
+            - Name: AWS_ACCESS_KEY_ID
+              Value: !Ref AWSAccessKeyId
+            - Name: AWS_SECRET_ACCESS_KEY
+              Value: !Ref AWSSecretAccessId
+            - Name: AWS_DEFAULT_REGION
+              Value: !Ref AWSDefaultRegion
+            - Name: MONGO_INITDB_ROOT_USERNAME
+              Value: !Ref MongoInitDbRootUsername
+            - Name: MONGO_INITDB_ROOT_PASSWORD
+              Value: !Ref MongoInitDbRootPassword
+            - Name: DB_NAME
+              Value: !Ref DbName
+            - Name: DB_HOST
+              Value: !Sub "${DbName}-02.${ServiceDiscoveryNameSpace}"
+            - Name: RS_INDEX
+              Value: 1
+            - Name: RS_PRIORITY
+              Value: 2
+            - Name: NUMBER_REPLICA_INSTANCE
+              Value: !Ref NumberOfReplicaInstance
+            - Name: SERVICE_DISCOVERY_NAME
+              Value: !Ref ServiceDiscoveryNameSpace
+          MountPoints: 
+            - ContainerPath: /data/db
+              SourceVolume: dbpath
+            - ContainerPath: /hostmetadata
+              SourceVolume: hostmetadata
+          VolumesFrom: []
+          Essential: true
+          Name: !Sub "${DbName}-02"
+          LogConfiguration: 
+            LogDriver: awslogs
+            Options: 
+              awslogs-group: /ecs/mongodb
+              awslogs-region : !Ref AWSDefaultRegion
+              awslogs-stream-prefix: !Sub "${DbName}-02"
+      PlacementConstraints: []
+      TaskRoleArn: !Ref ECSRoleArn
+      Family: !Sub "${DbName}-02"
+      RequiresCompatibilities: 
+        - EC2
+      NetworkMode: awsvpc
+      Memory: !FindInMap [InstanceTypeMap, !Ref InstanceType02, "Memory"]
+      Volumes:
+        - Name : dbpath
+          Host: 
+            SourcePath: /data/db
+        - Name : hostmetadata
+          Host: 
+            SourcePath: /ecsdata
+  TaskDefinition03:
+    Type: "AWS::ECS::TaskDefinition"
+    Properties:
+      ExecutionRoleArn: !Ref ECSRoleArn
+      ContainerDefinitions:
+        - Image: !Sub ${ContainerImageMongoUri}
+          Cpu: 0
+          HealthCheck: 
+            Command: 
+              - CMD-SHELL
+              - !Sub mongo "mongodb://${MongoInitDbRootUsername}:${MongoInitDbRootPassword}@127.0.0.1:27017/admin?authSource=admin" --eval 'db.runCommand("ping").ok'
+            Interval: 120
+            Retries: 10
+            StartPeriod: 300
+            Timeout: 5
+          Ulimits: 
+            - HardLimit: 100000
+              Name: nofile
+              SoftLimit: 100000
+          Command: 
+            - --replSet
+            - rs01
+            - --keyFile
+            - /keyfile.pem
+          Environment:
+            - Name: VOLUME_ID
+              Value: !If
+                - CreateNewMode 
+                - !Ref Volume03
+                - !Ref VolumeId03
+            - Name: INSTANCE_TYPE
+              Value: !Ref InstanceType03
+            - Name: AWS_ACCESS_KEY_ID
+              Value: !Ref AWSAccessKeyId
+            - Name: AWS_SECRET_ACCESS_KEY
+              Value: !Ref AWSSecretAccessId
+            - Name: AWS_DEFAULT_REGION
+              Value: !Ref AWSDefaultRegion
+            - Name: MONGO_INITDB_ROOT_USERNAME
+              Value: !Ref MongoInitDbRootUsername
+            - Name: MONGO_INITDB_ROOT_PASSWORD
+              Value: !Ref MongoInitDbRootPassword
+            - Name: DB_NAME
+              Value: !Ref DbName
+            - Name: DB_HOST
+              Value: !Sub "${DbName}-03.${ServiceDiscoveryNameSpace}"
+            - Name: RS_INDEX
+              Value: 2
+            - Name: RS_PRIORITY
+              Value: 1
+            - Name: NUMBER_REPLICA_INSTANCE
+              Value: !Ref NumberOfReplicaInstance
+            - Name: SERVICE_DISCOVERY_NAME
+              Value: !Ref ServiceDiscoveryNameSpace
+          MountPoints: 
+            - ContainerPath: /data/db
+              SourceVolume: dbpath
+            - ContainerPath: /hostmetadata
+              SourceVolume: hostmetadata
+          VolumesFrom: []
+          Essential: true
+          Name: !Sub "${DbName}-03"
+          LogConfiguration: 
+            LogDriver: awslogs
+            Options: 
+              awslogs-group: /ecs/mongodb
+              awslogs-region : !Ref AWSDefaultRegion
+              awslogs-stream-prefix: !Sub "${DbName}-03"
+      PlacementConstraints: []
+      TaskRoleArn: !Ref ECSRoleArn
+      Family: !Sub "${DbName}-03"
+      RequiresCompatibilities: 
+        - EC2
+      NetworkMode: awsvpc
+      Memory: !FindInMap [InstanceTypeMap, !Ref InstanceType03, "Memory"]
+      Volumes:
+        - Name : dbpath
+          Host: 
+            SourcePath: /data/db
+        - Name : hostmetadata
+          Host: 
+            SourcePath: /ecsdata
+  ServiceDiscovery01:
+    Type: AWS::ServiceDiscovery::Service
+    Properties: 
+      Description: "Service discovery 01"
+      DnsConfig: 
+        DnsRecords:
+        - TTL: 60
+          Type: A
+      Name: !Sub ${DbName}-01
+      NamespaceId: !Ref ServiceDiscoveryNameSpaceId
+    DependsOn:
+      - ServiceDiscovery02
+  ServiceDiscovery02:
+    Type: AWS::ServiceDiscovery::Service
+    Properties: 
+      Description: "Service discovery 02"
+      DnsConfig: 
+        DnsRecords:
+        - TTL: 60
+          Type: A
+      Name: !Sub ${DbName}-02
+      NamespaceId: !Ref ServiceDiscoveryNameSpaceId
+    DependsOn:
+      - ServiceDiscovery03
+  ServiceDiscovery03:
+    Type: AWS::ServiceDiscovery::Service
+    Properties: 
+      Description: "Service discovery 03"
+      DnsConfig: 
+        DnsRecords:
+        - TTL: 60
+          Type: A
+      Name: !Sub ${DbName}-03
+      NamespaceId: !Ref ServiceDiscoveryNameSpaceId
+  Service01:
+    Type: "AWS::ECS::Service"
+    Properties:
+      Cluster: !Ref ClusterName
+      DeploymentController:
+        Type: ECS
+      DesiredCount: !If 
+        - CreateReplica01
+        - 1
+        - 0
+      LaunchType: EC2
+      NetworkConfiguration: 
+        AwsvpcConfiguration:
+          SecurityGroups: !Ref SecurityGroupService
+          Subnets: !Ref Subnets
+      DeploymentConfiguration:
+        MinimumHealthyPercent: 0
+      ServiceName: !Sub ${DbName}-01
+      TaskDefinition:  !Ref TaskDefinition01
+      PlacementConstraints:
+        - Expression: !Sub attribute:${DbName}-rindex==01
+          Type: memberOf
+      ServiceRegistries:
+        - RegistryArn: !GetAtt ServiceDiscovery01.Arn
+    DependsOn:
+      - Service02
+      - RefreshInstance01
+  Service02:
+    Type: "AWS::ECS::Service"
+    Properties:
+      Cluster: !Ref ClusterName
+      DeploymentController:
+        Type: ECS
+      DesiredCount: !If 
+        - CreateReplica02
+        - 1
+        - 0
+      LaunchType: EC2
+      NetworkConfiguration: 
+        AwsvpcConfiguration:
+          SecurityGroups: !Ref SecurityGroupService
+          Subnets: !Ref Subnets
+      DeploymentConfiguration:
+        MinimumHealthyPercent: 0
+      ServiceName: !Sub ${DbName}-02
+      TaskDefinition:  !Ref TaskDefinition02
+      PlacementConstraints:
+        - Expression: !Sub attribute:${DbName}-rindex==02
+          Type: memberOf
+      ServiceRegistries:
+        - RegistryArn: !GetAtt ServiceDiscovery02.Arn
+    DependsOn:
+      - Service03
+      - RefreshInstance02
+  Service03:
+    Type: "AWS::ECS::Service"
+    Properties:
+      Cluster: !Ref ClusterName
+      DeploymentController:
+        Type: ECS
+      DesiredCount: !If 
+        - CreateReplica03 
+        - 1
+        - 0
+      LaunchType: EC2
+      NetworkConfiguration: 
+        AwsvpcConfiguration:
+          SecurityGroups: !Ref SecurityGroupService
+          Subnets: !Ref Subnets
+      DeploymentConfiguration:
+        MinimumHealthyPercent: 0
+      ServiceName: !Sub ${DbName}-03
+      TaskDefinition:  !Ref TaskDefinition03
+      PlacementConstraints:
+        - Expression: !Sub attribute:${DbName}-rindex==03
+          Type: memberOf
+      ServiceRegistries:
+        - RegistryArn: !GetAtt ServiceDiscovery03.Arn
+    DependsOn:
+      - AutoScaleGroup03
+      - Volume03
+      - RefreshInstance03
+  CPUAlarmHigh:
+    DependsOn:
+      - AutoScaleGroup01
+    Type: 'AWS::CloudWatch::Alarm'
+    Properties:
+      AlarmDescription: Scale-up if CPU is greater than 90% for 10 minutes
+      MetricName: CPUUtilization
+      Namespace: AWS/EC2
+      Statistic: Average
+      Period: '300'
+      EvaluationPeriods: '3'
+      Threshold: '40'
+      AlarmActions:
+        - !Ref SNSTopicHigh
+      Dimensions:
+        - Name: AutoScalingGroupName
+          Value: !Ref AutoScaleGroup01
+      ComparisonOperator: GreaterThanThreshold
+  CPUAlarmLow:
+    DependsOn:
+      - AutoScaleGroup01
+    Type: 'AWS::CloudWatch::Alarm'
+    Properties:
+      AlarmDescription: Scale-down if CPU is less than 70% for 10 minutes
+      MetricName: CPUUtilization
+      Namespace: AWS/EC2
+      Statistic: Average
+      Period: '3600'
+      EvaluationPeriods: '12'
+      Threshold: '20'
+      AlarmActions:
+        - !Ref SNSTopicLow
+      Dimensions:
+        - Name: AutoScalingGroupName
+          Value: !Ref AutoScaleGroup01
+      ComparisonOperator: LessThanThreshold
+  SNSTopicHigh:
+    Type: AWS::SNS::Topic
+    Properties: 
+      DisplayName: !Sub ${DbName}-SNS-High
+      TopicName: !Sub ${DbName}-SNS-High
+      Subscription:  
+      - 
+        Endpoint: !GetAtt LamdaScaleHandleFunction.Arn
+        Protocol: lambda
+  SNSTopicLow: 
+    Type: AWS::SNS::Topic
+    Properties: 
+      DisplayName: !Sub ${DbName}-SNS-Low
+      TopicName: !Sub ${DbName}-SNS-Low
+      Subscription:  
+      - 
+        Endpoint: !GetAtt LamdaScaleHandleFunction.Arn
+        Protocol: lambda
+  LamdaScaleHandleFunction:
+    Type: AWS::Lambda::Function
+    Properties:
+      FunctionName: !Sub ${DbName}-lamda-scale-signal
+      Description: scale mongodb 
+      Runtime: nodejs16.x
+      Handler: index.handler
+      Code: 
+        ZipFile: !Sub |
+          const AWS = require("aws-sdk");
+          var cloudformation = new AWS.CloudFormation({
+              apiVersion: "2010-05-15",
+              accessKeyId: "${AWSAccessKeyId}",
+              secretAccessKey: "${AWSSecretAccessId}",
+              region: "${AWSDefaultRegion}",
+          });
+
+          exports.handler = async (event) => {
+              let snsMessage = JSON.parse(event.Records[0].Sns.Message);
+              console.log(snsMessage);
+              if (snsMessage.NewStateValue == "ALARM") {
+                  console.log('ALARM fired')
+                  var params = {
+                      StackName: "${DbName}"
+                  };
+                  return await new Promise(r => {
+                      cloudformation.describeStacks(params, function (err, data) {
+                          if (err) {
+                              console.log(err, err.stack); // an error occurred
+                              r();
+                          }
+                          else {
+                              let parameters = data.Stacks[0].Parameters;
+                              let EnableAutoScale = parameters.find(p => p.ParameterKey == "EnableAutoScale").ParameterValue;
+                              let EnableScaleIn = parameters.find(p => p.ParameterKey == "EnableScaleIn").ParameterValue;
+                              let InstanceType01 = parameters.find(p => p.ParameterKey == "InstanceType01").ParameterValue;
+                              let InstanceType02 = parameters.find(p => p.ParameterKey == "InstanceType02").ParameterValue;
+                              let InstanceType03 = parameters.find(p => p.ParameterKey == "InstanceType03").ParameterValue;
+                              console.log(EnableAutoScale, EnableScaleIn, InstanceType01, snsMessage.NewStateValue, snsMessage.Trigger.ComparisonOperator)
+                              let mediumInstance01 = "m7g.medium";
+                              let mediumInstance02 = "m6g.medium";
+                              let mediumInstance03 = "m6gd.medium";
+                              let largeInstance01 = "m6g.large";
+                              let largeInstance02 = "m7g.large";
+                              let largeInstance03 = "m7gd.large";
+                              let xlargeInstance01 = "m6g.xlarge";
+                              let xlargeInstance02 = "m7g.xlarge";
+                              let xlargeInstance03 = "m7gd.xlarge";
+                              let xxlargeInstance01 = "m6g.2xlarge";
+                              let xxlargeInstance02 = "m7g.2xlarge";
+                              let xxlargeInstance03 = "m7gd.2xlarge";
+                              if (EnableAutoScale == "YES") {
+                                  let newScaleInstanceType01;
+                                  let newScaleInstanceType02;
+                                  let newScaleInstanceType03;
+                                  let needUpdate = false;
+                                  if (snsMessage.Trigger.ComparisonOperator == "GreaterThanThreshold") {
+                                      if (InstanceType01.indexOf('medium') > 0) {
+                                          newScaleInstanceType01 = largeInstance01
+                                          newScaleInstanceType02 = largeInstance02
+                                          newScaleInstanceType03 = largeInstance03
+                                      }
+                                      if (InstanceType01.indexOf('.large') > 0) {
+                                          newScaleInstanceType01 = xlargeInstance01
+                                          newScaleInstanceType02 = xlargeInstance02
+                                          newScaleInstanceType03 = xlargeInstance03
+                                      }
+                                      if (InstanceType01.indexOf('.xlarge') > 0) {
+                                          newScaleInstanceType01 = xxlargeInstance01
+                                          newScaleInstanceType02 = xxlargeInstance02
+                                          newScaleInstanceType03 = xxlargeInstance03
+                                      }
+                                      needUpdate = true;
+                                  }
+                                  if (
+                                      snsMessage.Trigger.ComparisonOperator == "LessThanThreshold" &&
+                                      EnableScaleIn == "YES"
+                                  ) {
+                                      if (InstanceType01.indexOf('.large') > 0) {
+                                          newScaleInstanceType01 = mediumInstance01
+                                          newScaleInstanceType02 = mediumInstance02
+                                          newScaleInstanceType03 = mediumInstance03
+                                      }
+                                      if (InstanceType01.indexOf('.xlarge') > 0) {
+                                          newScaleInstanceType01 = largeInstance01
+                                          newScaleInstanceType02 = largeInstance02
+                                          newScaleInstanceType03 = largeInstance03
+                                      }
+                                      if (InstanceType01.indexOf('.2xlarge') > 0) {
+                                          newScaleInstanceType01 = xlargeInstance01
+                                          newScaleInstanceType02 = xlargeInstance02
+                                          newScaleInstanceType03 = xlargeInstance03
+                                      }
+                                      needUpdate = true;
+
+
+                                  }
+                                  if(needUpdate){
+                                      let newParams = parameters.map(el=>{
+                                          if(el.ParameterKey == "InstanceType01"){
+                                              el.ParameterValue = newScaleInstanceType01
+                                          } else if(el.ParameterKey == "InstanceType02"){
+                                              el.ParameterValue = newScaleInstanceType02
+                                          } else if(el.ParameterKey == "InstanceType03"){
+                                              el.ParameterValue = newScaleInstanceType03
+                                          } else {
+                                              delete el.ParameterValue
+                                              el.UsePreviousValue = true;
+                                          }
+                                          return el;
+                                      })
+
+                                      var updateParams = {
+                                          StackName: "${DbName}",
+                                          Parameters: newParams,
+                                          TemplateURL: "${TemplateURL}"
+              
+                                      }
+                                      // console.log(params);
+                                      cloudformation.updateStack(updateParams, function (err, data) {
+                                          if (err) {
+                                              console.log(err, err.stack);
+                                          } // an error occurred
+                                          else {
+                                              console.log(data);
+                                          }          // successful response
+                                          r()
+                                      });
+                                  }
+                                
+                              }
+
+
+                          }
+
+                      })
+                  })
+
+
+              }
+
+          }
+
+      MemorySize: 512
+      Timeout: 60
+      Role: !Ref LambdaExecutionRoleArn
+  LamdaScaleHanldeAlias:
+    Type: AWS::Lambda::Alias
+    Properties:
+      FunctionName: !Ref LamdaScaleHandleFunction
+      FunctionVersion: '$LATEST'
+      Name: live
+
+  LambdaInvokePermissionHigh: 
+    Type: AWS::Lambda::Permission
+    Properties: 
+      Action: lambda:InvokeFunction
+      Principal: sns.amazonaws.com
+      SourceArn:  !Ref SNSTopicHigh 
+      FunctionName: !Ref LamdaScaleHandleFunction
+  LambdaInvokePermissionLow: 
+    Type: AWS::Lambda::Permission
+    Properties: 
+      Action: lambda:InvokeFunction
+      Principal: sns.amazonaws.com
+      SourceArn:  !Ref SNSTopicLow
+      FunctionName: !Ref LamdaScaleHandleFunction
+  LamdaRefreshInstanceFunction:
+    Type: AWS::Lambda::Function
+    Properties:
+      FunctionName: !Sub ${DbName}-Refresh-Instance
+      Description: refersh autoscale function
+      Runtime: nodejs16.x
+      Handler: index.handler
+      Code: 
+        ZipFile: !Sub |
+          const AWS = require("aws-sdk");
+          var autoscaling = new AWS.AutoScaling({
+              apiVersion: "2011-01-01",
+              accessKeyId: "${AWSAccessKeyId}",
+              secretAccessKey: "${AWSSecretAccessId}",
+              region: "${AWSDefaultRegion}",
+          });
+          var response = require('cfn-response');
+
+          exports.handler = function (event, context) {
+             console.log(event);
+
+            var responseData = {};
+            responseData["Id"] = event.ResourceProperties.AutoScaleGroup;
+            if (event.RequestType == "Delete") {
+                response.send(event, context, "SUCCESS", responseData);
+                return;
+            }
+            var responseStatus = "FAILED";
+             let autoscaleGroupName = event.ResourceProperties.AutoScaleGroup
+              let params = {
+                AutoScalingGroupName: autoscaleGroupName
+              }
+              autoscaling.startInstanceRefresh(params, function(err, data) {
+                if (err) {
+                    console.log(err, err.stack); // an error occurred
+                    responseData = { Error: err.toString() };
+                  } else {
+                    console.log(data);
+                    responseStatus = "SUCCESS"
+                }
+                 if (event.RequestType == "Create") {
+                    responseStatus = "SUCCESS"
+                 }
+                response.send(event, context, responseStatus, responseData);
+              });
+          }
+
+      MemorySize: 512
+      Timeout: 15
+      Role: !Ref LambdaExecutionRoleArn
+  RefreshInstance01:
+    Type: Custom::RefereshInstance01
+    DependsOn: 
+      - AutoScaleGroup01
+      - LamdaRefreshInstanceFunction
+    Version: "1.0"
+    Properties:
+      ServiceToken: !GetAtt LamdaRefreshInstanceFunction.Arn
+      AutoScaleGroup: !Ref AutoScaleGroup01
+      InstanceType: !Ref InstanceType01
+  RefreshInstance02:
+    Type: Custom::RefereshInstance02
+    DependsOn: 
+      - AutoScaleGroup02
+      - LamdaRefreshInstanceFunction
+    Version: "1.0"
+    Properties:
+      ServiceToken: !GetAtt LamdaRefreshInstanceFunction.Arn
+      AutoScaleGroup: !Ref AutoScaleGroup02
+      InstanceType: !Ref InstanceType02
+  RefreshInstance03:
+    Type: Custom::RefereshInstance03
+    DependsOn: 
+      - AutoScaleGroup03
+      - LamdaRefreshInstanceFunction
+    Version: "1.0"
+    Properties:
+      ServiceToken: !GetAtt LamdaRefreshInstanceFunction.Arn
+      AutoScaleGroup: !Ref AutoScaleGroup03
+      InstanceType: !Ref InstanceType03
