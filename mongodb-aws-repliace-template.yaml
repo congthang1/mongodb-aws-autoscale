@@ -77,22 +77,22 @@ Parameters:
   ContainerImageMongoUri:
     Type: String
     Description: "Enter custom Mongo Image uri build source"
-    Default: 
+    Default: your-mongo-build-uri
   AWSAccessKeyId:
     Type: String
     Description: "Enter your AWS_ACCESS_KEY_ID"
-    Default:
+    Default: AWS_ACCESS_KEY_ID
   AWSSecretAccessId:
     Type: String
     Description: "Enter your AWS_SECRET_ACCESS_KEY"
-    Default: 
+    Default: AWS_SECRET_ACCESS_KEY
   AWSDefaultRegion: 
     Type: String
     Description: "Enter AWS Default region"
     Default: ap-southeast-1
   ECSRoleArn:
     Type: String
-    Description: Task Role Arn
+    Description: Enter ECS Task excution Role Arn
     Default: "arn:aws:iam::YOURAWSID:role/ecsTaskExecutionRole" 
   NumberOfReplicaInstance:
     Type: String
@@ -180,7 +180,7 @@ Parameters:
     Default: sg-xxxxxxxx
   ECSIAMRoleArn: 
     Type: String
-    Description: Enter IAM instance profile arn
+    Description: Enter ECS instance role
     Default: arn:aws:iam::YOURACCOUNTID:instance-profile/ecsInstanceRole
   SecurityGroupService:
     Type: CommaDelimitedList
@@ -213,11 +213,11 @@ Parameters:
   ECSOptimizedAMIId:
     Type: String
     Description: Enter ECS optimized AMI ID
-    Default: ami-04cc846b2f67a7a61
+    Default: ami-02749f7a96386bacf
   ECSOptimizedAMIArm64Id:
     Type: String
     Description: Enter ECS optimized AMI ID
-    Default: ami-0e01f5b4cebdd3a8e
+    Default: ami-0e94e3e3603496b1f
   Architecture:
     Type: String
     Description: Select Instance Platform architecture type
@@ -353,6 +353,10 @@ Resources:
           - CreateNewMode
           - Fn::Base64: !Sub |
               #!/bin/bash 
+              sudo yum install -y unzip;
+              curl "https://awscli.amazonaws.com/awscli-exe-linux-aarch64.zip" -o "awscliv2.zip";
+              unzip awscliv2.zip;
+              sudo ./aws/install;
               echo ECS_CLUSTER=${ClusterName} >> /etc/ecs/ecs.config; 
               echo ECS_IMAGE_PULL_BEHAVIOR=always >> /etc/ecs/ecs.config;  
               echo ECS_INSTANCE_ATTRIBUTES={\"${DbName}-rindex\": \"01\"} >> /etc/ecs/ecs.config;
@@ -364,6 +368,10 @@ Resources:
               echo ${InstanceType01} > /ecsdata/instanceType
           - Fn::Base64: !Sub |
               #!/bin/bash 
+              sudo yum install -y unzip;
+              curl "https://awscli.amazonaws.com/awscli-exe-linux-aarch64.zip" -o "awscliv2.zip";
+              unzip awscliv2.zip;
+              sudo ./aws/install;
               echo ECS_CLUSTER=${ClusterName} >> /etc/ecs/ecs.config; 
               echo ECS_IMAGE_PULL_BEHAVIOR=always >> /etc/ecs/ecs.config;  
               echo ECS_INSTANCE_ATTRIBUTES={\"${DbName}-rindex\": \"01\"} >> /etc/ecs/ecs.config;
@@ -402,6 +410,10 @@ Resources:
           - CreateNewMode
           - Fn::Base64: !Sub |
               #!/bin/bash 
+              sudo yum install -y unzip;
+              curl "https://awscli.amazonaws.com/awscli-exe-linux-aarch64.zip" -o "awscliv2.zip";
+              unzip awscliv2.zip;
+              sudo ./aws/install;
               echo ECS_CLUSTER=${ClusterName} >> /etc/ecs/ecs.config; 
               echo ECS_IMAGE_PULL_BEHAVIOR=always >> /etc/ecs/ecs.config;  
               echo ECS_INSTANCE_ATTRIBUTES={\"${DbName}-rindex\": \"02\"} >> /etc/ecs/ecs.config;
@@ -413,6 +425,10 @@ Resources:
               echo ${InstanceType02} > /ecsdata/instanceType
           - Fn::Base64: !Sub |
               #!/bin/bash 
+              sudo yum install -y unzip;
+              curl "https://awscli.amazonaws.com/awscli-exe-linux-aarch64.zip" -o "awscliv2.zip";
+              unzip awscliv2.zip;
+              sudo ./aws/install;
               echo ECS_CLUSTER=${ClusterName} >> /etc/ecs/ecs.config; 
               echo ECS_IMAGE_PULL_BEHAVIOR=always >> /etc/ecs/ecs.config;  
               echo ECS_INSTANCE_ATTRIBUTES={\"${DbName}-rindex\": \"02\"} >> /etc/ecs/ecs.config;
@@ -450,6 +466,10 @@ Resources:
           - CreateNewMode
           - Fn::Base64: !Sub |
               #!/bin/bash 
+              sudo yum install -y unzip;
+              curl "https://awscli.amazonaws.com/awscli-exe-linux-aarch64.zip" -o "awscliv2.zip";
+              unzip awscliv2.zip;
+              sudo ./aws/install;
               echo ECS_CLUSTER=${ClusterName} >> /etc/ecs/ecs.config; 
               echo ECS_IMAGE_PULL_BEHAVIOR=always >> /etc/ecs/ecs.config;  
               echo ECS_INSTANCE_ATTRIBUTES={\"${DbName}-rindex\": \"03\"} >> /etc/ecs/ecs.config;
@@ -461,6 +481,10 @@ Resources:
               echo ${InstanceType03} > /ecsdata/instanceType
           - Fn::Base64: !Sub |
               #!/bin/bash 
+              sudo yum install -y unzip;
+              curl "https://awscli.amazonaws.com/awscli-exe-linux-aarch64.zip" -o "awscliv2.zip";
+              unzip awscliv2.zip;
+              sudo ./aws/install;
               echo ECS_CLUSTER=${ClusterName} >> /etc/ecs/ecs.config; 
               echo ECS_IMAGE_PULL_BEHAVIOR=always >> /etc/ecs/ecs.config;  
               echo ECS_INSTANCE_ATTRIBUTES={\"${DbName}-rindex\": \"03\"} >> /etc/ecs/ecs.config;

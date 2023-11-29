@@ -1,6 +1,6 @@
 FROM mongo:5.0.16
 RUN apt-get update && apt-get install -y curl && apt-get install -y openssh-client && apt install -y iproute2
-COPY sshdb-key.pem /sshdb-key.pem
+COPY ssh-keyname.pem /sshdb-key.pem
 RUN chmod 400 /sshdb-key.pem
 COPY keyfile.pem /keyfile.pem
 COPY custominit.sh /docker-entrypoint-initdb.d/
