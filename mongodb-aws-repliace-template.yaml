@@ -391,7 +391,6 @@ Resources:
             - !Ref ECSOptimizedAMIArm64Id
             - !Ref ECSOptimizedAMIId
         KeyName: !Ref SSHKeyName
-        KeyName: !Ref SSHKeyName
         IamInstanceProfile: 
           Arn: !Ref ECSIAMRoleArn
         NetworkInterfaces: 
